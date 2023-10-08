@@ -1,17 +1,18 @@
-const { Schema, model } = require('mongoose');
-const Joi = require('joi');
+const { Schema, model } = require("mongoose");
+const Joi = require("joi")
 
-const emailRegexp = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/
+const { handleMongooseError } = require("../helpers");
 
-const userSchema = Schema({
+// eslint-disable-next-line no-useless-escape
+const emailRegexp = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+
+const userSchema = new Schema({
     password: {
         type: String,
-        minlength: 6,
         required: [true, 'Password is required'],
     },
     email: {
         type: String,
-        match: emailRegexp,
         required: [true, 'Email is required'],
         unique: true,
     },
@@ -24,33 +25,34 @@ const userSchema = Schema({
         type: String,
         default: null,
     },
-}, { versionKey: false, timestamps: true });
+}, { versionKey: false, timestamps: true })
+
+userSchema.post("save", handleMongooseError)
 
 const registerSchema = Joi.object({
     email: Joi.string().pattern(emailRegexp).required(),
     password: Joi.string().min(6).required(),
-    subscription: Joi.string().valid("starter", "pro", "business"),
-    token: Joi.string(),
-});
+})
 
 const loginSchema = Joi.object({
     email: Joi.string().pattern(emailRegexp).required(),
     password: Joi.string().min(6).required(),
-});
+})
 
-const updateSubscriptionSchema = Joi.object({
-    subscription: Joi.string().valid("starter", "pro", "business"),
-});
+const updateSubscription = Joi.object({
+    subscription: Joi.string().valid("starter", "pro", "business").required(),
+})
 
 const schemas = {
-    register: registerSchema,
-    login: loginSchema,
-    updateSubscription: updateSubscriptionSchema
-};
+    registerSchema,
+    loginSchema,
+    updateSubscription,
 
-const User = model('user', userSchema);
+}
+
+const User = model("user", userSchema);
 
 module.exports = {
     User,
-    schemas
-};
+    schemas,
+}
